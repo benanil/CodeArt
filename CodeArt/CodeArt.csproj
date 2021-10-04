@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTK" Version="4.6.7" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
+	<PackageReference Include="Coroutine" Version="2.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+  	<Reference Include="ImGui.NET">
+  		<HintPath>libs\Imgui\ImGui.NET.dll</HintPath>
+  	</Reference>
+  	<Reference Include="ImPlot.NET">
+  		<HintPath>libs\Imgui\ImPlot.NET.dll</HintPath>
+  	</Reference>
+  </ItemGroup>
+
+</Project>
