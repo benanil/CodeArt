@@ -8,22 +8,15 @@ namespace CodeArt
     {
         public int TexId, programId;
         public int width, height;
-        static readonly int[] workGroupCount = new int[3];
-
-        static ComputeShader()
-        {
-            GL.GetInteger((GetIndexedPName)All.MaxComputeWorkGroupCount, 0, out workGroupCount[0]);
-            GL.GetInteger((GetIndexedPName)All.MaxComputeWorkGroupCount, 1, out workGroupCount[1]);
-            GL.GetInteger((GetIndexedPName)All.MaxComputeWorkGroupCount, 2, out workGroupCount[2]);
-            Debug.LogWarning("GPU Work Group Count 0" + workGroupCount[0]);
-            Debug.LogWarning("GPU Work Group Count 1" + workGroupCount[1]);
-            Debug.LogWarning("GPU Work Group Count 2" + workGroupCount[2]);
-        }
 
         public ComputeShader(string path, in int width, in int height)
         {
             Invalidate(width, height);
+            Compile(path, out programId);
+        }
 
+        public static void Compile(string path, out int programID)
+        {
             // generate and link compute shader shader
             int compute = GL.CreateShader(ShaderType.ComputeShader);
             GL.ShaderSource(compute, File.ReadAllText(path));
@@ -38,12 +31,12 @@ namespace CodeArt
                 throw new Exception("compute shader compilation failed");
             }
 
-            programId = GL.CreateProgram();
-            GL.AttachShader(programId, compute);
-            GL.LinkProgram(programId);
+            programID = GL.CreateProgram();
+            GL.AttachShader(programID, compute);
+            GL.LinkProgram(programID);
 
             GL.DeleteShader(compute);
-            GL.DetachShader(programId, compute);
+            GL.DetachShader(programID, compute);
         }
 
         public void Invalidate(in int width, in int height)
@@ -55,7 +48,8 @@ namespace CodeArt
             GL.BindTexture(TextureTarget.Texture2D, TexId);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            
+            GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
+
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba32f, width, height, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
         }
 

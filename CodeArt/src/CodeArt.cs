@@ -8,6 +8,10 @@ using System.Runtime.InteropServices;
 using Dear_ImGui_Sample;
 using Coroutine;
 using ImGuiNET;
+using SixLabors.ImageSharp.PixelFormats;
+using SysVec4 = System.Numerics.Vector4;
+using SixLabors.ImageSharp;
+using System.Threading.Tasks;
 
 namespace CodeArt
 {
@@ -41,7 +45,7 @@ namespace CodeArt
         private ComputeShader mainCompute;
         private Data data;
         private ImGuiController ImguiController;
-
+        
         protected unsafe override void OnLoad()
         {
             instance = this;
@@ -72,7 +76,8 @@ namespace CodeArt
             data = new Data
             {
                 screenSize = new Vector2(1440, 900),
-                scale = 8
+                scale = 8,
+                time = 1.0f
             };
 
             dataUBO = GL.GenBuffer();
@@ -85,32 +90,33 @@ namespace CodeArt
             shader.Use();
         }
 
-        private void OnWindow()
+        private unsafe void OnWindow()
         {
             ImGui.DragFloat("scale", ref data.scale);
+            if(ImGui.Button("Render")) needsUpdate = true;
+            ImGui.DragFloat("sun angle:", ref data.time, 0.1f);
         }
 
+        bool needsUpdate = true;
+        
         protected unsafe override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
 
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.StencilBufferBit);
 
-            mainCompute.Use();
+            if (true) //(needsUpdate)
             {
-                data.time = Time.time;
+                mainCompute.Use();
+                // data.time = Time.time;
                 GL.BindBuffer(BufferTarget.UniformBuffer, dataUBO);
                 GL.BindBufferRange(BufferRangeTarget.UniformBuffer, 0, dataUBO, IntPtr.Zero, sizeof(float) * 4);
                 GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, sizeof(float) * 4, ref data);
                 mainCompute.Dispatch();
+                needsUpdate = false; 
             }
 
-            shader.Use();
-            GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, mainCompute.TexId);
-            
-            GL.BindVertexArray(vao);
-            GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
+            RenderToQuad();
 
             Editor.ImguiWindow();
 
@@ -118,6 +124,17 @@ namespace CodeArt
 
             GL.Flush();
             SwapBuffers();
+        }
+
+        private void RenderToQuad()
+        { 
+            shader.Use();
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, mainCompute.TexId);
+            
+            GL.BindVertexArray(vao);
+            GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
+            GL.UseProgram(0);
         }
 
         public static int MaxFps = 2000;
@@ -138,6 +155,7 @@ namespace CodeArt
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
+            data.scale -= e.OffsetY * .1f;
             ImguiController.MouseScroll(e.Offset);
             base.OnMouseWheel(e);
         }
